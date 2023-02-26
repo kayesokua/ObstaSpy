@@ -5,7 +5,6 @@
 //  Created by Kaye S. on 2023/02/26
 //  Copyright © 2023 Kayescaping. All rights reserved.
 //
-
 import UIKit
 import AVFoundation
 import Photos
@@ -92,7 +91,14 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
                 
                 let greyImage = UIImage.init(pixelBuffer: convertedDepthPixelBuffer)
                 
-                UIImageWriteToSavedPhotosAlbum(greyImage!, nil, nil, nil)
+                if let pngData = greyImage!.pngData() {
+                    PHPhotoLibrary.shared().performChanges({
+                        let creationRequest = PHAssetCreationRequest.forAsset()
+                        creationRequest.addResource(with: .photo, data: pngData, options: nil)
+                    }, completionHandler: nil)
+                } else {
+                    print("Unable to convert image to PNG")
+                }
 
             }
         }
@@ -113,6 +119,13 @@ class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegate {
     func getSettings() -> AVCapturePhotoSettings {
         let setting = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
         setting.isDepthDataDeliveryEnabled = photoOutput.isDepthDataDeliverySupported
+        
+        // Check if flash is available and set the flash mode to auto
+        if photoOutput.supportedFlashModes.contains(.auto) {
+            setting.flashMode = .auto
+            print("set camera on auto")
+        }
+        
         return setting
     }
     
